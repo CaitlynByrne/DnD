@@ -17,6 +17,7 @@ The infrastructure provides a scalable, self-hosted Kubernetes deployment that s
 - **Declarative Configuration:** Infrastructure as Code approach
 - **Immutable Infrastructure:** Containers rebuilt rather than modified
 - **Service Mesh:** Secure inter-service communication
+- **Loosely Coupled Architecture:** Each containerized serivce is loosely coupled, using appropriate APIs, DNS lookups, and similar
 
 ## Kubernetes Deployment Architecture
 
@@ -25,12 +26,14 @@ The infrastructure provides a scalable, self-hosted Kubernetes deployment that s
 #### Minimum Hardware Requirements
 - **Control Plane:** 2 vCPU, 4GB RAM, 50GB storage
 - **Worker Nodes:** 4 vCPU, 8GB RAM, 100GB storage per node
+- **AI Processing Node:** 8 vCPU, 16GB RAM, 200GB storage (optional GPU support)
 - **Recommended:** 3-node cluster for high availability
-- **Storage:** NFS or local-path provisioner for persistent volumes
+- **Storage:** networked storage (e.g., Ceph or MinIO) or local-path provisioner for persistent volumes
+- **Concurrent Users:** Support 1-15 concurrent users per instance
 
 #### Network Requirements
-- **Pod Network:** Calico or Flannel CNI plugin
-- **Service Mesh:** Istio for advanced networking (optional)
+- **Pod Network:** Cilium CNI plugin
+- **Service Mesh:** Istio for advanced networking
 - **Load Balancer:** MetalLB for bare-metal deployments
 - **Ingress:** NGINX Ingress Controller with TLS termination
 
@@ -39,10 +42,11 @@ The infrastructure provides a scalable, self-hosted Kubernetes deployment that s
 # Namespace structure
 namespaces:
   - gmc-app          # Application services
-  - gmc-data         # Data services (postgres, redis, etc.)
-  - gmc-ai           # AI and ML services
+  - gmc-data         # Data services (postgres, redis, elasticsearch)
+  - gmc-ai           # AI and ML services (vllm, diart)
   - gmc-monitoring   # Monitoring and observability
   - gmc-system       # System utilities and operators
+  - gmc-integrations # External integrations (discord, dndbeyond)
 ```
 
 ### Service Deployment Manifests
@@ -234,23 +238,41 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ollama-server
+  name: vllm-server
   namespace: gmc-ai
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ollama-server
+      app: vllm-server
   template:
     metadata:
       labels:
-        app: ollama-server
+        app: vllm-server
     spec:
       containers:
-      - name: ollama
-        image: ollama/ollama:latest
+      - name: vllm
+        image: vllm/vllm-openai:latest
         ports:
-        - containerPort: 11434
+        - containerPort: 8000
+        env:
+        - name: MODEL_NAME
+          value: "microsoft/DialoGPT-medium"
+        - name: GPU_MEMORY_UTILIZATION
+          value: "0.9"
+        - name: MAX_MODEL_LEN
+          value: "4096"
+        args:
+        - --model
+        - $(MODEL_NAME)
+        - --host
+        - 0.0.0.0
+        - --port
+        - "8000"
+        - --gpu-memory-utilization
+        - $(GPU_MEMORY_UTILIZATION)
+        - --max-model-len
+        - $(MAX_MODEL_LEN)
         resources:
           requests:
             memory: "4Gi"
@@ -261,19 +283,24 @@ spec:
             cpu: "4000m"
             nvidia.com/gpu: 1
         volumeMounts:
-        - name: ollama-models
-          mountPath: /root/.ollama
-        command:
-        - /bin/bash
-        - -c
-        - |
-          ollama serve &
-          ollama pull llama2:7b-chat
-          wait
+        - name: vllm-models
+          mountPath: /root/.cache/huggingface
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
       volumes:
-      - name: ollama-models
+      - name: vllm-models
         persistentVolumeClaim:
-          claimName: ollama-models-pvc
+          claimName: vllm-models-pvc
       nodeSelector:
         accelerator: nvidia-tesla-k80  # Optional GPU node selection
 ```
@@ -301,8 +328,12 @@ spec:
         ports:
         - containerPort: 8001
         env:
-        - name: WHISPER_MODEL
-          value: "base"
+        - name: DIART_MODEL
+          value: "pyannote/segmentation-3.0"
+        - name: DIART_STEP
+          value: "0.5"
+        - name: DIART_LATENCY
+          value: "0.5"
         - name: REDIS_URL
           valueFrom:
             configMapKeyRef:
@@ -318,10 +349,115 @@ spec:
         volumeMounts:
         - name: audio-models
           mountPath: /models
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8001
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8001
+          initialDelaySeconds: 10
+          periodSeconds: 5
       volumes:
       - name: audio-models
         persistentVolumeClaim:
           claimName: audio-models-pvc
+```
+
+### Discord Integration Service
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discord-integration
+  namespace: gmc-integrations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discord-integration
+  template:
+    metadata:
+      labels:
+        app: discord-integration
+    spec:
+      containers:
+      - name: discord-bot
+        image: gmc/discord-integration:latest
+        ports:
+        - containerPort: 8002
+        env:
+        - name: DISCORD_BOT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: discord-secret
+              key: bot-token
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: gmc-secrets
+              key: database-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+```
+
+### Elasticsearch Deployment
+```yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: gmc-data
+spec:
+  serviceName: elasticsearch
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.5.0
+        ports:
+        - containerPort: 9200
+        - containerPort: 9300
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms1g -Xmx1g"
+        - name: xpack.security.enabled
+          value: "false"
+        volumeMounts:
+        - name: elasticsearch-storage
+          mountPath: /usr/share/elasticsearch/data
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+  volumeClaimTemplates:
+  - metadata:
+      name: elasticsearch-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
 ```
 
 ## Monitoring and Observability
@@ -519,7 +655,7 @@ spec:
           name: gmc-ai
     ports:
     - protocol: TCP
-      port: 11434  # Ollama
+      port: 8000  # vLLM
 ```
 
 ### TLS Configuration
@@ -558,7 +694,7 @@ data:
   database-url: <base64-encoded-database-url>
   redis-url: <base64-encoded-redis-url>
   jwt-secret: <base64-encoded-jwt-secret>
-  ollama-api-key: <base64-encoded-ollama-key>
+  vllm-api-key: <base64-encoded-vllm-key>
 ---
 apiVersion: external-secrets.io/v1beta1
 kind: SecretStore
@@ -642,11 +778,11 @@ redis:
       size: 10Gi
 
 ai:
-  ollama:
+  vllm:
     enabled: true
-    models:
-      - "llama2:7b-chat"
-      - "codellama:7b"
+    model: "microsoft/DialoGPT-medium"
+    maxModelLen: 4096
+    gpuMemoryUtilization: 0.9
     resources:
       requests:
         memory: "4Gi"
@@ -654,6 +790,14 @@ ai:
       limits:
         memory: "8Gi"
         cpu: "4000m"
+  
+  diart:
+    enabled: true
+    model: "pyannote/segmentation-3.0"
+    step: 0.5
+    latency: 0.5
+    realtime: true
+    speakerDiarization: true
 
 monitoring:
   prometheus:
@@ -663,6 +807,25 @@ monitoring:
     adminPassword: "admin"
   loki:
     enabled: true
+
+integrations:
+  discord:
+    enabled: true
+    botToken: "" # Configure via secret
+    webhookSupport: true
+  
+  dndbeyond:
+    enabled: true
+    apiSupport: true
+    characterImport: true
+
+search:
+  elasticsearch:
+    enabled: true
+    replicas: 1
+    storage: "20Gi"
+    fuzzySearch: true
+    phoneticMatching: true
 ```
 
 ### GitOps Integration
@@ -733,7 +896,7 @@ spec:
         - name: CHECK_INTERVAL
           value: "30s"
         - name: SERVICES_TO_CHECK
-          value: "gmc-api,postgresql,redis,ollama-server"
+          value: "gmc-api,postgresql,redis,vllm-server"
 ```
 
 ### Disaster Recovery

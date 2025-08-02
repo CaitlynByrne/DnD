@@ -8,7 +8,7 @@ The frontend serves as the primary interface for Game Masters and players, provi
 
 ### Core Framework
 - **Primary:** React 18+ with TypeScript
-- **State Management:** Zustand or Redux Toolkit for complex state
+- **State Management:** Zustand for complex state
 - **Routing:** React Router v6 for single-page application navigation
 - **Build Tool:** Vite for fast development and optimized builds
 
@@ -20,14 +20,17 @@ The frontend serves as the primary interface for Game Masters and players, provi
 
 ### Real-time Features
 - **WebSocket Client:** Socket.io-client for real-time communication
-- **Audio Processing:** Web Audio API for local audio handling
+- **Audio Processing:** Web Audio API for local audio handling and real-time transcription display
 - **Media Streams:** WebRTC for peer-to-peer audio sharing (optional)
+- **Speaker Diarization:** Real-time speaker identification with PyAnnote.audio integration
 
 ### Data Management
 - **API Client:** TanStack Query (React Query) for server state management
 - **Forms:** React Hook Form with Zod validation
 - **File Handling:** Custom drag-and-drop with progress tracking
 - **Offline Support:** Service Worker with background sync
+- **Search Integration:** PostgreSQL extensions integration for fuzzy search
+- **Real-time Sync:** WebSocket-based real-time data synchronization
 
 ## Architecture Patterns
 
@@ -78,6 +81,7 @@ src/
 #### Character Creation/Editing
 - **Wizard Interface:** Step-by-step character creation
 - **Template System:** Pre-built character templates
+- **D&D Beyond Integration:** Import characters from D&D Beyond API
 - **Validation:** Real-time form validation with helpful error messages
 - **Auto-save:** Periodic saving of form data
 
@@ -90,7 +94,7 @@ src/
 - **Drag & Drop:** Reorganize location hierarchies
 
 #### Location Detail View
-- **Map Integration:** Interactive maps with location markers
+- **Map Integration:** Interactive maps with interactable location markers
 - **Rich Text Editor:** WYSIWYG editor for location descriptions
 - **Asset Gallery:** Image and document management
 - **Environmental Controls:** Weather, lighting, and atmosphere settings
@@ -110,10 +114,11 @@ src/
 - **Condition Tracker:** Visual status effect indicators
 
 #### Audio Controls
-- **Recording Toggle:** Start/stop session recording
-- **Speaker Identification:** Visual indicators for active speakers
-- **Keyword Highlights:** Real-time highlighting of detected keywords
-- **Volume Controls:** Individual speaker volume adjustment
+- **Recording Toggle:** Start/stop session recording with privacy controls
+- **Speaker Identification:** Visual indicators for active speakers with diarization
+- **Keyword Highlights:** Real-time highlighting of detected keywords (spells, monsters, conditions)
+- **Live Transcription:** Real-time transcript display with speaker attribution
+- **Keyword Detection:** Automatic reference lookup for game system (e.g., D&D) terms
 
 ### 4. Search Interface
 
@@ -134,14 +139,47 @@ src/
 #### Transcript Viewer
 - **Speaker-Coded Display:** Color-coded speaker identification
 - **Timestamp Navigation:** Click timestamps to jump to audio
-- **Annotation Tools:** Add notes and tags to transcript sections
+- **Annotation Tools:** Add notes and tags to transcript sections, be able to assign unidentified speakers to players or characters
 - **Export Options:** PDF, markdown, and plain text export
 
 #### AI Summary Interface
-- **Progressive Generation:** Real-time summary updates
+- **Progressive Generation:** Real-time summary updates during sessions
 - **Section Highlighting:** Visual connections between transcript and summary
 - **Edit Controls:** Manual summary editing and regeneration
 - **Approval Workflow:** Review and approve AI-generated content
+- **Character Database Updates:** Automatic character relationship and note updates
+- **Discord Integration:** One-click posting of session summaries to Discord servers
+
+### 6. Plot and Arc Management Interface
+
+#### Plot Tracking Interface
+- **Visual Plot Diagrams:** Interactive flowcharts for plot threads with D3.js
+- **Arc Progress Tracking:** Visual progress indicators for character arcs
+- **Dependency Mapping:** Show relationships between plot elements
+- **Session Planning Integration:** Link plot advancement to upcoming sessions
+- **Foreshadowing Management:** Track planted clues and planned payoffs
+- **Campaign Timeline:** Interactive timeline of major campaign events
+- **Milestone Progress:** Able to assign items to and track plot elements for the purposes of milestone progression
+
+#### Story Arc Visualization
+- **Timeline View:** Linear progression of story events
+- **Network View:** Relationship mapping between characters and plot threads
+- **Kanban Board:** Plot status tracking (planned, active, background, resolved)
+- **Character Spotlight:** Individual character development tracking
+
+### 7. Random Content Generation Interface
+
+#### Content Generation Controls
+- **Quick Generate:** One-click generation of NPCs, locations, and encounters
+- **Context-Aware Generation:** AI considers current campaign setting and tone
+- **Template System:** Customizable generation templates for different content types
+- **Seed Management:** Reproducible generation using seeds for consistency
+
+#### Generation Result Display
+- **Preview Mode:** Review generated content before saving
+- **Bulk Generation:** Generate multiple items simultaneously
+- **Customization Tools:** Edit and refine generated content
+- **Integration Helpers:** Quick links to add generated content to campaign database
 
 ## User Experience Patterns
 
@@ -168,7 +206,7 @@ src/
 ### Loading Performance
 - **Initial Load:** < 3 seconds to interactive on 3G connection
 - **Route Transitions:** < 500ms between page transitions
-- **Search Results:** < 200ms for local searches, < 1s for server searches
+- **Search Results:** < 200ms for local searches, < 1s for fuzzy searches
 - **Real-time Updates:** < 100ms for WebSocket message processing
 
 ### Runtime Performance
@@ -176,6 +214,8 @@ src/
 - **CPU Usage:** < 5% idle, < 20% during active use
 - **Frame Rate:** 60fps for animations and interactions
 - **Bundle Size:** < 500KB initial bundle, < 1MB total
+- **Concurrent Users:** Support 1-15 concurrent users per instance
+- **Audio Processing:** Efficient Web Audio API usage for real-time features
 
 ### Scalability Considerations
 - **Virtual Scrolling:** Handle large lists (1000+ items) smoothly
@@ -195,7 +235,6 @@ src/
 - **High Contrast Mode:** Optional high contrast theme
 - **Font Size Controls:** User-adjustable font sizing
 - **Motion Preferences:** Respect prefers-reduced-motion
-- **Voice Controls:** Basic voice navigation support
 
 ## Security Considerations
 

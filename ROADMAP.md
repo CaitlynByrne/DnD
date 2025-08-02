@@ -22,7 +22,7 @@ The GameMaster's Companion (GMC) represents a comprehensive, privacy-first digit
 ### Technology Stack Summary
 - **Frontend:** React 18+ with TypeScript, Tailwind CSS, and WebSocket integration.  Libraries and components chosen to be suitable for ReactNative implementation as well as web use.
 - **Backend:** PostgreSQL, Redis, Elasticsearch, 
-- **AI/ML:** Local LLM deployment (vllm for serving), pyannote.audio for speech processing
+- **AI/ML:** Local LLM deployment (vllm for serving), diart for real-time speech processing and speaker diarization
 - **Infrastructure:** Kubernetes deployment with comprehensive monitoring stack, with scalable deployments to handle infrastructure from single node to production.
 - **Development:** Modern CI/CD practices with GitOps deployment strategies
 
@@ -57,7 +57,7 @@ The GameMaster's Companion (GMC) represents a comprehensive, privacy-first digit
 **Key Deliverables:**
 - WebSocket-based real-time synchronization
 - Local LLM deployment and integration
-- Audio transcription and speaker identification
+- Real-time audio transcription and speaker diarization using diart
 - Keyword detection and reference lookup
 - Multi-device session interface
 - Session recording and basic summarization

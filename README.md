@@ -28,7 +28,7 @@ Eliminate the administrative burden on Game Masters while enhancing player engag
 
 - **Frontend:** React with TypeScript and real-time WebSocket integration
 - **Backend:** FastAPI (Python) with PostgreSQL and Redis
-- **AI/ML:** Local LLM deployment via Ollama, Whisper.cpp for speech processing
+- **AI/ML:** Local LLM deployment via vllm, diart for speech processing
 - **Infrastructure:** Kubernetes-native deployment with comprehensive monitoring
 
 ## Target Users
