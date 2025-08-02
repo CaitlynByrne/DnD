@@ -20,10 +20,10 @@ The GameMaster's Companion (GMC) represents a comprehensive, privacy-first digit
 ## Technical Architecture Overview
 
 ### Technology Stack Summary
-- **Frontend:** React 18+ with TypeScript, Tailwind CSS, and WebSocket integration
-- **Backend:** FastAPI (Python) with PostgreSQL, Redis, and Elasticsearch
-- **AI/ML:** Local LLM deployment (Ollama), Whisper.cpp for speech processing
-- **Infrastructure:** Kubernetes deployment with comprehensive monitoring stack
+- **Frontend:** React 18+ with TypeScript, Tailwind CSS, and WebSocket integration.  Libraries and components chosen to be suitable for ReactNative implementation as well as web use.
+- **Backend:** PostgreSQL, Redis, Elasticsearch, 
+- **AI/ML:** Local LLM deployment (vllm for serving), pyannote.audio for speech processing
+- **Infrastructure:** Kubernetes deployment with comprehensive monitoring stack, with scalable deployments to handle infrastructure from single node to production.
 - **Development:** Modern CI/CD practices with GitOps deployment strategies
 
 ### Key Architectural Decisions
@@ -125,7 +125,7 @@ The GameMaster's Companion (GMC) represents a comprehensive, privacy-first digit
 ### Core Development Team
 - **Technical Lead:** Architecture decisions and code quality oversight
 - **Frontend Developer:** React expertise with real-time application experience
-- **Backend Developer:** Python/FastAPI with database and API design skills
+- **Backend Architect:** Python/FastAPI with database and API design skills
 - **AI/ML Engineer:** Local LLM deployment and audio processing implementation
 - **DevOps Engineer:** Kubernetes deployment and infrastructure automation
 
@@ -133,10 +133,9 @@ The GameMaster's Companion (GMC) represents a comprehensive, privacy-first digit
 - **Product Manager:** Feature prioritization and user story management
 - **UX/UI Designer:** User experience design and usability testing
 - **Game Design Consultant:** RPG domain expertise and feature validation
-- **Community Manager:** User feedback collection and beta program management
+- **Security Consultant:** Privacy and security architecture review
 
 ### Advisory Roles
-- **Security Consultant:** Privacy and security architecture review
 - **Performance Engineer:** Scalability and optimization consulting
 - **Legal Advisor:** Open source licensing and privacy compliance
 

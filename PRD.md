@@ -33,11 +33,13 @@
 - Achievement and story arc tracking
 - Relationship mapping between characters
 - Character evolution timeline
+- Character import / update from common platforms like dndbeyond
 
 **User Stories:**
 - As a GM, I want to quickly access an NPC's motivations and voice notes during roleplay
 - As a GM, I want to track how player actions affect NPC relationships over time
 - As a player, I want to view my character's progression and achievements
+- As a player, I want to import my character sheet from dndbeyond.com
 
 ### 2. World and Location Database
 **Description:** Hierarchical storage system for campaign settings, locations, and environmental details
@@ -47,7 +49,7 @@
 - Environmental conditions and atmosphere notes
 - Population and demographic data
 - Economic and political information
-- Integration with battle map systems
+- Integration with battle map systems / Virtual Table Tops (VTTs)
 
 **User Stories:**
 - As a GM, I want to quickly generate a tavern with appropriate NPCs when players go off-script
@@ -65,23 +67,24 @@
 - Seed-based generation for reproducibility
 
 **User Stories:**
-- As a GM, I want to generate a believable merchant with appropriate inventory instantly
-- As a GM, I want random encounters that fit my campaign's tone and difficulty
+- As a GM, I want to generate a believable NPC with appropriate inventory & notes instantly
+- As a GM, I want random encounters that fit my campaign's tone and difficulty based on my player character's levels
 - As a GM, I want to create custom random tables for my homebrew world
 
 ### 4. Live Session Assistant
 **Description:** Real-time audio processing and keyword detection during active gameplay
 
 **Key Components:**
-- Speaker diarization using PyAnnotate or similar
+- Speaker diarization using PyAnote.audio or similar
 - Keyword detection for rules, spells, monsters, and conditions
 - Automatic reference lookup and display
 - Combat tracking and initiative management
-- Real-time transcription with speaker identification
+- Real-time transcription with speaker identification, including automatic annotations of in versus out of character interactions, and combat interactions
 
 **User Stories:**
 - As a GM, I want spell descriptions to appear automatically when players cast spells
 - As a GM, I want to track who said what during important story moments
+- As a GM, I want NPC notes to automatically update when PCs interact with them in a meaningful way
 - As a player, I want to see condition effects when they're applied to my character
 
 ### 5. Session Notes and Summarization
@@ -93,6 +96,7 @@
 - Plot point extraction and categorization
 - Action item generation for future sessions
 - Searchable session archive
+- Automatic posting of session summaries to shared platforms like Discord
 
 **User Stories:**
 - As a GM, I want my character notes automatically updated based on what happened in session
@@ -113,6 +117,7 @@
 - As a GM, I want to visualize how different plot threads intersect
 - As a GM, I want reminders about unresolved plot hooks from previous sessions
 - As a GM, I want to plan character development beats for individual players
+- As a GM, I want to map out how a campaign arc or session arc might go
 
 ### 7. Multi-Device Collaboration Platform
 **Description:** Real-time synchronized experience across GM and player devices with role-based access controls
@@ -128,6 +133,7 @@
 - As a GM, I want to share monster stats with myself but hide them from players
 - As a player, I want to access my character sheet from any device
 - As a GM, I want to push maps or handouts to all player devices simultaneously
+- As a GM, I want the ability to log into multiple devices for multiple purposes, such as having one device for session notes or popups, and another device for shared maps, showing NPCs to players
 
 ### 8. Intelligent Search System
 **Description:** Fuzzy search capabilities designed for fantasy naming conventions and phonetic similarity
@@ -140,14 +146,14 @@
 - Natural language query processing
 
 **User Stories:**
-- As a GM, I want to find "Drizzt" even if a player searches for "Drizzit"
+- As a GM, I want to find "Drizzt" even if I search for "Drizit"
 - As a GM, I want to search for "that elf from session 3" and get relevant results
 - As a player, I want to find spell effects by describing what they do
 
 ## Technical Architecture
 
 ### Frontend Requirements
-- **Framework:** React or Vue.js for responsive web application
+- **Framework:** React for responsive web application, with future pathways to using React Native for mobile devices
 - **Real-time Communication:** WebSocket integration for live features
 - **Offline Support:** Service Worker implementation for offline functionality
 - **Responsive Design:** Mobile-first approach with tablet and desktop optimization
@@ -155,9 +161,12 @@
 
 ### Backend Requirements
 - **API Framework:** FastAPI (Python) or Node.js/Express for REST and WebSocket APIs
-- **Database:** PostgreSQL for relational data with Redis for caching and real-time features
-- **Audio Processing:** Integration with PyAnnotate or similar for speech-to-text and diarization
-- **AI Integration:** Local LLM deployment (Ollama) or API integration for content generation
+- **Database:** 
+  - PostgreSQL for relational data, 
+  - PostgreSQL extensions for similarity search, vector storage, graph storage
+  - Redis for caching and real-time features
+- **Audio Processing:** Integration with PyAnnote.audio or similar for speech-to-text and diarization
+- **AI Integration:** Local LLM deployment (vllm) or API integration for content generation
 - **Search Engine:** Elasticsearch or similar for fuzzy search capabilities
 
 ### Infrastructure Requirements
@@ -179,8 +188,8 @@
 
 ### Performance
 - **Response Time:** < 200ms for database queries, < 2s for AI generation
-- **Scalability:** Support for 1-8 concurrent users per instance
-- **Audio Processing:** Real-time transcription with < 3s delay
+- **Scalability:** Support for 1-15 concurrent users per instance
+- **Audio Processing:** Real-time transcription with < 5s delay
 - **Search:** Sub-second fuzzy search results
 
 ### Security
@@ -196,6 +205,7 @@
 
 ### Usability
 - **Learning Curve:** Productive use within first session for experienced GMs
+- **Ease of Use:** Intuitive simplified interface for players
 - **Documentation:** Comprehensive user guides and video tutorials
 - **Accessibility:** Support for screen readers and keyboard navigation
 
@@ -226,7 +236,6 @@
 ### User Adoption Risks
 - **Learning Curve:** Feature-rich tools may overwhelm new users
 - **Technical Barriers:** Self-hosting requirements may limit adoption
-- **Integration Resistance:** Some GMs prefer traditional paper-based methods
 
 ### Mitigation Strategies
 - Modular architecture allowing gradual feature adoption
