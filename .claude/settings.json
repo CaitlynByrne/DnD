@@ -1,0 +1,57 @@
+{
+  "model": "sonnet",
+  "includeCoAuthoredBy": false,
+  "env": {
+    "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+    "DISABLE_BUG_COMMAND": "1",
+    "DISABLE_ERROR_REPORTING": "1",
+    "DISABLE_TELEMETRY": "1",
+    "DISABLE_NON_ESSENTIAL_MODEL_CALLS": "1"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(echo:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(source:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr diff:*)",
+      "WebFetch(domain:docs.litellm.ai)",
+      "WebFetch(domain:openai.com)",
+      "WebFetch(domain:anthropic.com)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:github.com)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/hook_enforce_rg_over_grep.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file_path=$(jq -r '.tool_input.file_path // empty'); if [[ \"$file_path\" == *.py || \"$file_path\" == *.js || \"$file_path\" == *.jsx || \"$file_path\" == *.ts || \"$file_path\" == *.tsx ]]; then if [[ \"$OSTYPE\" == \"darwin\"* ]]; then sed -i '' '/^[[:space:]]*$/d' \"$file_path\"; else sed -i '/^[[:space:]]*$/d' \"$file_path\"; fi; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
