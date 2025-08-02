@@ -97,7 +97,20 @@ As a GM and players, we need comprehensive character management tools that suppo
 - Manage inventory and equipment
 - Access character sheet offline when needed
 
-**Story 1.5: Character Achievement Tracking**
+**Story 1.5: D&D Beyond Character Integration**
+- **As a** player
+- **I want to** import and sync my character from D&D Beyond
+- **So that** I can use my existing character sheets without manual data entry
+
+**Acceptance Criteria:**
+- Connect to D&D Beyond API with user authentication
+- Import complete character sheet data including stats, spells, and equipment
+- Sync character updates bidirectionally when possible
+- Handle D&D Beyond data format changes gracefully
+- Support multiple characters per user account
+- Maintain local backup of character data
+
+**Story 1.6: Character Achievement Tracking**
 - **As a** player
 - **I want to** see my character's achievements and story milestones
 - **So that** I can remember my character's journey and feel a sense of progression
@@ -140,7 +153,19 @@ As a GM, I need tools to create, organize, and quickly access detailed informati
 - Set default conditions that can be overridden
 - Include secret or hidden information visible only to GM
 
-**Story 2.3: Location-Based NPCs and Events**
+**Story 2.3: VTT and Battle Map Integration**
+- **As a** GM
+- **I want to** integrate location data with Virtual Table Top (VTT) platforms
+- **So that** I can seamlessly transition between narrative and tactical gameplay
+
+**Acceptance Criteria:**
+- Export location maps to popular VTT platforms (Roll20, Foundry VTT, etc.)
+- Sync character positions between GMC and VTT during combat
+- Import battle maps and associate them with locations
+- Link tactical combat data back to narrative location records
+- Support multiple VTT platforms with standardized export formats
+
+**Story 2.4: Location-Based NPCs and Events**
 - **As a** GM
 - **I want to** associate NPCs and events with specific locations
 - **So that** I can create believable, populated environments
@@ -154,7 +179,7 @@ As a GM, I need tools to create, organize, and quickly access detailed informati
 
 ### Quick Reference and Navigation Stories
 
-**Story 2.4: Fast Location Access During Sessions**
+**Story 2.5: Fast Location Access During Sessions**
 - **As a** GM
 - **I want to** instantly access location information when players move to new areas
 - **So that** I can maintain game flow without lengthy preparation pauses
@@ -285,7 +310,20 @@ As a GM, I need intelligent tools that transform raw session recordings into org
 - Categorize events by type (combat, roleplay, exploration, etc.)
 - Allow manual editing and enhancement of generated summaries
 
-**Story 5.2: Character and World Updates**
+**Story 5.2: Discord Integration for Session Summaries**
+- **As a** GM
+- **I want to** automatically post session summaries to our Discord server
+- **So that** players can stay updated and discuss sessions between games
+
+**Acceptance Criteria:**
+- Connect to Discord servers via bot integration
+- Automatically post formatted session summaries to designated channels
+- Include key events, character achievements, and next session reminders
+- Allow manual editing of summaries before posting
+- Support multiple Discord servers for different campaigns
+- Respect Discord rate limits and posting permissions
+
+**Story 5.3: Character and World Updates**
 - **As a** GM
 - **I want to** automatically update character and location information based on session events
 - **So that** my campaign database stays current without manual data entry
@@ -299,7 +337,7 @@ As a GM, I need intelligent tools that transform raw session recordings into org
 
 ### Session Archive and Search Stories
 
-**Story 5.3: Session History and Search**
+**Story 5.4: Session History and Search**
 - **As a** GM
 - **I want to** search through all previous session content and summaries
 - **So that** I can reference past events and maintain campaign continuity
@@ -311,7 +349,7 @@ As a GM, I need intelligent tools that transform raw session recordings into org
 - Quick access to related session content
 - Export search results for external use
 
-**Story 5.4: Campaign Timeline Visualization**
+**Story 5.5: Campaign Timeline Visualization**
 - **As a** GM
 - **I want to** see a visual timeline of campaign events and character development
 - **So that** I can track story progression and plan future content
@@ -437,14 +475,44 @@ As all users, we need powerful, intuitive search capabilities that can handle th
 - Visual representation of search result connections
 - Export relationship data for external analysis
 
-## Epic 8: Multi-User Collaboration
+## Epic 8: Mobile and Cross-Platform Experience
+
+### Epic Description
+As users who game in various environments and use multiple devices, we need a consistent, optimized experience across mobile phones, tablets, and desktop computers, with particular emphasis on mobile-first design and React Native compatibility.
+
+### Mobile-First Design Stories
+
+**Story 8.1: Mobile Session Participation**
+- **As a** player using a mobile device
+- **I want to** participate fully in sessions using my phone or tablet
+- **So that** I don't need to bring additional devices to gaming sessions
+
+**Acceptance Criteria:**
+- Touch-optimized interface for character sheet access
+- Efficient data usage for mobile networks
+- Offline capabilities for areas with poor connectivity
+- Battery optimization for extended gaming sessions
+
+**Story 8.2: Progressive Web App Features**
+- **As a** user on various devices
+- **I want to** install the app on my device like a native application
+- **So that** I can access it quickly without browser bookmarks
+
+**Acceptance Criteria:**
+- PWA manifest for home screen installation
+- Service worker for offline functionality
+- Native-like navigation and gestures
+- Background sync when connectivity returns
+- Platform-specific optimizations (iOS, Android, desktop)
+
+## Epic 9: Multi-User Collaboration
 
 ### Epic Description
 As participants in shared gaming sessions, we need seamless collaboration tools that enable real-time information sharing while respecting role-based access controls and individual privacy preferences.
 
 ### Real-time Collaboration Stories
 
-**Story 8.1: Session Participant Management**
+**Story 9.1: Session Participant Management**
 - **As a** GM
 - **I want to** manage who can access session information and control what they see
 - **So that** I can share appropriate information while maintaining game surprises and privacy
@@ -456,7 +524,19 @@ As participants in shared gaming sessions, we need seamless collaboration tools 
 - Temporarily grant or revoke access to specific content
 - Track who has access to what information
 
-**Story 8.2: Collaborative Note-Taking**
+**Story 9.2: Multi-Device GM Setup**
+- **As a** GM
+- **I want to** use multiple devices simultaneously for different purposes
+- **So that** I can have dedicated screens for session notes, shared maps, and private GM information
+
+**Acceptance Criteria:**
+- Log into multiple devices with same GM account
+- Designate device roles (notes, shared display, private reference)
+- Sync relevant information to each device based on its role
+- Quick switching between device modes during session
+- Maintain session continuity if one device disconnects
+
+**Story 9.3: Collaborative Note-Taking**
 - **As a** session participant
 - **I want to** contribute to session notes and share observations
 - **So that** we can collectively maintain better campaign records
@@ -470,7 +550,7 @@ As participants in shared gaming sessions, we need seamless collaboration tools 
 
 ### Device and Platform Stories
 
-**Story 8.3: Cross-Device Synchronization**
+**Story 9.4: Cross-Device Synchronization**
 - **As a** user
 - **I want to** access the same up-to-date information on all my devices
 - **So that** I can seamlessly switch between phone, tablet, and computer during sessions
@@ -482,7 +562,7 @@ As participants in shared gaming sessions, we need seamless collaboration tools 
 - Device-specific UI optimization
 - Bandwidth-conscious sync for mobile devices
 
-**Story 8.4: Screen Sharing and Presentation**
+**Story 9.5: Screen Sharing and Presentation**
 - **As a** GM
 - **I want to** share visual content with players' devices in real-time
 - **So that** everyone can see maps, handouts, and reference materials clearly
