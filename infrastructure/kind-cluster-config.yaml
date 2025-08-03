@@ -1,0 +1,84 @@
+# Kind cluster configuration for GameMaster's Companion local development
+# Optimized for multi-service architecture with AI processing
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: gmc-dev
+nodes:
+- role: control-plane
+  kubeadmConfigPatches:
+  - |
+    kind: InitConfiguration
+    nodeRegistration:
+      kubeletExtraArgs:
+        node-labels: "ingress-ready=true"
+  extraPortMappings:
+  # HTTP
+  - containerPort: 80
+    hostPort: 80
+    protocol: TCP
+  # HTTPS
+  - containerPort: 443
+    hostPort: 443
+    protocol: TCP
+  # API Direct Access (development)
+  - containerPort: 30000
+    hostPort: 8000
+    protocol: TCP
+  # PostgreSQL Direct Access (development)
+  - containerPort: 30001
+    hostPort: 5432
+    protocol: TCP
+  # Redis Direct Access (development)
+  - containerPort: 30002
+    hostPort: 6379
+    protocol: TCP
+  # Elasticsearch Direct Access (development)
+  - containerPort: 30003
+    hostPort: 9200
+    protocol: TCP
+  # vLLM Direct Access (development)
+  - containerPort: 30004
+    hostPort: 8001
+    protocol: TCP
+  # Grafana Dashboard (development)
+  - containerPort: 30005
+    hostPort: 3000
+    protocol: TCP
+  # Audio Processing Service
+  - containerPort: 30006
+    hostPort: 8002
+    protocol: TCP
+  extraMounts:
+  # Mount for persistent data in development
+  - hostPath: C:\Users\srini\OneDrive\Documents\Code\DnD\dev-data
+    containerPath: /var/local-path-provisioner
+  # Mount for model storage (AI models cache)
+  - hostPath: C:\Users\srini\OneDrive\Documents\Code\DnD\dev-models
+    containerPath: /var/models
+- role: worker
+  labels:
+    workload: standard
+  extraMounts:
+  - hostPath: C:\Users\srini\OneDrive\Documents\Code\DnD\dev-data
+    containerPath: /var/local-path-provisioner
+  - hostPath: C:\Users\srini\OneDrive\Documents\Code\DnD\dev-models
+    containerPath: /var/models
+- role: worker
+  labels:
+    workload: ai-intensive
+  extraMounts:
+  - hostPath: C:\Users\srini\OneDrive\Documents\Code\DnD\dev-data
+    containerPath: /var/local-path-provisioner
+  - hostPath: C:\Users\srini\OneDrive\Documents\Code\DnD\dev-models
+    containerPath: /var/models
+networking:
+  # Use custom pod subnet to avoid conflicts
+  podSubnet: "10.244.0.0/16"
+  serviceSubnet: "10.96.0.0/12"
+  # Disable default CNI, we'll install Cilium for advanced networking
+  disableDefaultCNI: false
+  kubeProxyMode: "iptables"
+containerdConfigPatches:
+- |-
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]
+    endpoint = ["http://localhost:5001"]

@@ -1,0 +1,99 @@
+# API Service
+{{- if .Values.api.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  type: {{ .Values.api.service.type }}
+  ports:
+  - port: {{ .Values.api.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+    {{- if and (eq .Values.api.service.type "NodePort") .Values.api.service.nodePort }}
+    nodePort: {{ .Values.api.service.nodePort }}
+    {{- end }}
+  selector:
+    {{- include "gamemaster-companion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+{{- end }}
+---
+# Frontend Service
+{{- if .Values.frontend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+  - port: {{ .Values.frontend.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+    {{- if and (eq .Values.frontend.service.type "NodePort") .Values.frontend.service.nodePort }}
+    nodePort: {{ .Values.frontend.service.nodePort }}
+    {{- end }}
+  selector:
+    {{- include "gamemaster-companion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+{{- end }}
+---
+# vLLM Service
+{{- if and .Values.ai.vllm.enabled .Values.ai.vllm }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-vllm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vllm
+spec:
+  type: {{ .Values.ai.vllm.service.type }}
+  ports:
+  - port: {{ .Values.ai.vllm.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+    {{- if and (eq .Values.ai.vllm.service.type "NodePort") .Values.ai.vllm.service.nodePort }}
+    nodePort: {{ .Values.ai.vllm.service.nodePort }}
+    {{- end }}
+  selector:
+    {{- include "gamemaster-companion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: vllm
+{{- end }}
+---
+# Audio Processor Service
+{{- if and .Values.ai.audioProcessor.enabled .Values.ai.audioProcessor }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-audio-processor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audio-processor
+spec:
+  type: {{ .Values.ai.audioProcessor.service.type }}
+  ports:
+  - port: {{ .Values.ai.audioProcessor.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+    {{- if and (eq .Values.ai.audioProcessor.service.type "NodePort") .Values.ai.audioProcessor.service.nodePort }}
+    nodePort: {{ .Values.ai.audioProcessor.service.nodePort }}
+    {{- end }}
+  selector:
+    {{- include "gamemaster-companion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: audio-processor
+{{- end }}

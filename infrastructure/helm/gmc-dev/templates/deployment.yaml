@@ -1,0 +1,264 @@
+# API Service Deployment
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gamemaster-companion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        {{- include "gamemaster-companion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+    spec:
+      {{- include "gamemaster-companion.podSecurityContext" .Values.api | nindent 6 }}
+      containers:
+      - name: api
+        {{- include "gamemaster-companion.securityContext" .Values.api | nindent 8 }}
+        image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.api.service.port }}
+          protocol: TCP
+        env:
+        {{- include "gamemaster-companion.commonEnv" . | nindent 8 }}
+        - name: DATABASE_URL
+          value: {{ include "gamemaster-companion.databaseUrl" . | quote }}
+        - name: REDIS_URL
+          value: {{ include "gamemaster-companion.redisUrl" . | quote }}
+        - name: ELASTICSEARCH_URL
+          value: {{ include "gamemaster-companion.elasticsearchUrl" . | quote }}
+        - name: VLLM_API_URL
+          value: {{ include "gamemaster-companion.vllmUrl" . | quote }}
+        {{- range $key, $value := .Values.api.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- if .Values.api.healthCheck.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.api.healthCheck.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.api.healthCheck.initialDelaySeconds }}
+          periodSeconds: {{ .Values.api.healthCheck.periodSeconds }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.api.healthCheck.path }}
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        {{- end }}
+        {{- include "gamemaster-companion.resources" .Values.api | nindent 8 }}
+      {{- include "gamemaster-companion.nodeSelector" .Values.api | nindent 6 }}
+      {{- include "gamemaster-companion.affinity" .Values.api | nindent 6 }}
+      {{- include "gamemaster-companion.tolerations" .Values.api | nindent 6 }}
+{{- end }}
+---
+# Frontend Deployment
+{{- if .Values.frontend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gamemaster-companion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        {{- include "gamemaster-companion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
+    spec:
+      {{- include "gamemaster-companion.podSecurityContext" .Values.frontend | nindent 6 }}
+      containers:
+      - name: frontend
+        {{- include "gamemaster-companion.securityContext" .Values.frontend | nindent 8 }}
+        image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.frontend.service.port }}
+          protocol: TCP
+        env:
+        {{- include "gamemaster-companion.commonEnv" . | nindent 8 }}
+        - name: API_URL
+          value: "http://{{ include "gamemaster-companion.fullname" . }}-api:{{ .Values.api.service.port }}"
+        {{- range $key, $value := .Values.frontend.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        {{- include "gamemaster-companion.resources" .Values.frontend | nindent 8 }}
+      {{- include "gamemaster-companion.nodeSelector" .Values.frontend | nindent 6 }}
+      {{- include "gamemaster-companion.affinity" .Values.frontend | nindent 6 }}
+      {{- include "gamemaster-companion.tolerations" .Values.frontend | nindent 6 }}
+{{- end }}
+---
+# vLLM Deployment
+{{- if and .Values.ai.vllm.enabled .Values.ai.vllm }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-vllm
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vllm
+spec:
+  replicas: {{ .Values.ai.vllm.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gamemaster-companion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: vllm
+  template:
+    metadata:
+      labels:
+        {{- include "gamemaster-companion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: vllm
+    spec:
+      {{- include "gamemaster-companion.podSecurityContext" .Values.ai.vllm | nindent 6 }}
+      containers:
+      - name: vllm
+        {{- include "gamemaster-companion.securityContext" .Values.ai.vllm | nindent 8 }}
+        image: "{{ .Values.ai.vllm.image.repository }}:{{ .Values.ai.vllm.image.tag }}"
+        imagePullPolicy: {{ .Values.ai.vllm.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.ai.vllm.service.port }}
+          protocol: TCP
+        env:
+        {{- include "gamemaster-companion.commonEnv" . | nindent 8 }}
+        - name: MODEL_NAME
+          value: {{ .Values.ai.vllm.model | quote }}
+        - name: MAX_MODEL_LEN
+          value: {{ .Values.ai.vllm.maxModelLen | quote }}
+        - name: GPU_MEMORY_UTILIZATION
+          value: {{ .Values.ai.vllm.gpuMemoryUtilization | quote }}
+        args:
+        - --model
+        - $(MODEL_NAME)
+        - --host
+        - 0.0.0.0
+        - --port
+        - "{{ .Values.ai.vllm.service.port }}"
+        - --max-model-len
+        - $(MAX_MODEL_LEN)
+        - --gpu-memory-utilization
+        - $(GPU_MEMORY_UTILIZATION)
+        {{- if .Values.ai.vllm.persistence.enabled }}
+        volumeMounts:
+        - name: model-storage
+          mountPath: {{ .Values.ai.vllm.persistence.mountPath }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        {{- include "gamemaster-companion.resources" .Values.ai.vllm | nindent 8 }}
+      {{- if .Values.ai.vllm.persistence.enabled }}
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: {{ include "gamemaster-companion.fullname" . }}-vllm-models
+      {{- end }}
+      {{- include "gamemaster-companion.nodeSelector" .Values.ai.vllm | nindent 6 }}
+      {{- include "gamemaster-companion.affinity" .Values.ai.vllm | nindent 6 }}
+      {{- include "gamemaster-companion.tolerations" .Values.ai.vllm | nindent 6 }}
+{{- end }}
+---
+# Audio Processor Deployment
+{{- if and .Values.ai.audioProcessor.enabled .Values.ai.audioProcessor }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-audio-processor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audio-processor
+spec:
+  replicas: {{ .Values.ai.audioProcessor.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gamemaster-companion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: audio-processor
+  template:
+    metadata:
+      labels:
+        {{- include "gamemaster-companion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: audio-processor
+    spec:
+      {{- include "gamemaster-companion.podSecurityContext" .Values.ai.audioProcessor | nindent 6 }}
+      containers:
+      - name: audio-processor
+        {{- include "gamemaster-companion.securityContext" .Values.ai.audioProcessor | nindent 8 }}
+        image: "{{ .Values.ai.audioProcessor.image.repository }}:{{ .Values.ai.audioProcessor.image.tag }}"
+        imagePullPolicy: {{ .Values.ai.audioProcessor.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.ai.audioProcessor.service.port }}
+          protocol: TCP
+        env:
+        {{- include "gamemaster-companion.commonEnv" . | nindent 8 }}
+        - name: REDIS_URL
+          value: {{ include "gamemaster-companion.redisUrl" . | quote }}
+        {{- range $key, $value := .Values.ai.audioProcessor.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        {{- include "gamemaster-companion.resources" .Values.ai.audioProcessor | nindent 8 }}
+      {{- include "gamemaster-companion.nodeSelector" .Values.ai.audioProcessor | nindent 6 }}
+      {{- include "gamemaster-companion.affinity" .Values.ai.audioProcessor | nindent 6 }}
+      {{- include "gamemaster-companion.tolerations" .Values.ai.audioProcessor | nindent 6 }}
+{{- end }}

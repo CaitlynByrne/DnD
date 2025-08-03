@@ -1,0 +1,195 @@
+# Development-specific values for GameMaster's Companion
+# Overrides values.yaml for local Kind cluster development
+
+global:
+  domain: "gmc.local"
+  debug: true
+  logLevel: "DEBUG"
+  environment: "development"
+
+# Reduced resources for development
+api:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "100m"
+
+frontend:
+  replicaCount: 1
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "25m"
+    limits:
+      memory: "128Mi"
+      cpu: "50m"
+
+# Minimal database for development
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "dev-password-changeme"
+    username: "postgres"
+    password: "dev-password-changeme"
+    database: "gamemaster_companion_dev"
+  primary:
+    persistence:
+      enabled: true
+      size: 5Gi
+      storageClass: "local-fast"
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "50m"
+      limits:
+        memory: "256Mi"
+        cpu: "100m"
+
+# Minimal Redis for development
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 1Gi
+      storageClass: "local-cache"
+    resources:
+      requests:
+        memory: "32Mi"
+        cpu: "25m"
+      limits:
+        memory: "64Mi"
+        cpu: "50m"
+
+# Lightweight AI services for development
+ai:
+  vllm:
+    enabled: true
+    model: "microsoft/DialoGPT-small"  # Smaller model for development
+    maxModelLen: 1024  # Reduced context length
+    gpuMemoryUtilization: 0.5
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "local-bulk"
+  
+  audioProcessor:
+    enabled: false  # Disabled by default in development
+    resources:
+      requests:
+        memory: "256Mi"
+        cpu: "100m"
+      limits:
+        memory: "512Mi"
+        cpu: "200m"
+
+# Minimal search for development
+search:
+  elasticsearch:
+    enabled: true
+    replicas: 1
+    volumeClaimTemplate:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "local-fast"
+      resources:
+        requests:
+          storage: 2Gi
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "512Mi"
+      limits:
+        cpu: "500m"
+        memory: "1Gi"
+
+# Lightweight monitoring for development
+monitoring:
+  enabled: true
+  kube-prometheus-stack:
+    grafana:
+      enabled: true
+      persistence:
+        enabled: false
+      resources:
+        requests:
+          cpu: "25m"
+          memory: "64Mi"
+        limits:
+          cpu: "50m"
+          memory: "128Mi"
+    prometheus:
+      prometheusSpec:
+        replicas: 1
+        retention: "3d"
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "local-fast"
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 2Gi
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "128Mi"
+          limits:
+            cpu: "100m"
+            memory: "256Mi"
+
+# Development-specific integrations
+integrations:
+  discord:
+    enabled: false
+  dndbeyond:
+    enabled: false
+
+# Enable development features
+development:
+  seedData:
+    enabled: true
+    testCampaigns: 2
+    testCharacters: 5
+    testSessions: 10
+  
+  debugEndpoints:
+    enabled: true
+    metrics: true
+    profiling: true
+
+# Relaxed resource quotas for development
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "2"
+    requests.memory: "4Gi"
+    limits.cpu: "4"
+    limits.memory: "8Gi"
+    persistentvolumeclaims: "10"
+
+# Disabled for easier development
+networkPolicy:
+  enabled: false
+
+backup:
+  enabled: false
+
+# Service account settings
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""

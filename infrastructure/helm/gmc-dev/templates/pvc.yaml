@@ -1,0 +1,73 @@
+# Persistent Volume Claims for GameMaster's Companion
+{{- if and .Values.ai.vllm.enabled .Values.ai.vllm.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-vllm-models
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vllm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.ai.vllm.persistence.storageClass | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.ai.vllm.persistence.size | quote }}
+{{- end }}
+---
+# Shared model storage for AI services
+{{- if .Values.ai.vllm.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-ai-models-shared
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: ai-shared
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: local-bulk
+  resources:
+    requests:
+      storage: 30Gi
+{{- end }}
+---
+# Audio processing models and cache
+{{- if .Values.ai.audioProcessor.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-audio-models
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: audio-processor
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-bulk
+  resources:
+    requests:
+      storage: 10Gi
+{{- end }}
+---
+# Application file storage (user uploads, generated content)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-app-storage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  resources:
+    requests:
+      storage: 5Gi

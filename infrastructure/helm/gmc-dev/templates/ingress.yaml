@@ -1,0 +1,102 @@
+# Ingress configuration for GameMaster's Companion
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- range .Values.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "gamemaster-companion.fullname" $ }}-{{ .backend.service.name }}
+                port:
+                  number: {{ .backend.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
+---
+# Development ingress for direct service access
+{{- if and .Values.ingress.enabled .Values.global.debug }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-debug-ingress
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: debug
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+  - host: {{ .Values.global.domain }}
+    http:
+      paths:
+      # Direct API access for debugging
+      - path: /debug/api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "gamemaster-companion.fullname" . }}-api
+            port:
+              number: {{ .Values.api.service.port }}
+      # Direct vLLM access for debugging
+      {{- if .Values.ai.vllm.enabled }}
+      - path: /debug/vllm(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "gamemaster-companion.fullname" . }}-vllm
+            port:
+              number: {{ .Values.ai.vllm.service.port }}
+      {{- end }}
+      # Direct audio processor access for debugging
+      {{- if .Values.ai.audioProcessor.enabled }}
+      - path: /debug/audio(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "gamemaster-companion.fullname" . }}-audio-processor
+            port:
+              number: {{ .Values.ai.audioProcessor.service.port }}
+      {{- end }}
+      # Health checker access
+      {{- if .Values.api.healthCheck.enabled }}
+      - path: /debug/health(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "gamemaster-companion.fullname" . }}-health-checker
+            port:
+              number: 8080
+      {{- end }}
+{{- end }}

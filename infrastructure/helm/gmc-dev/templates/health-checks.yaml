@@ -1,0 +1,224 @@
+# Health check endpoints for GameMaster's Companion services
+# Provides centralized health monitoring for all components
+{{- if .Values.api.healthCheck.enabled }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-health-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+data:
+  health-check.py: |
+    #!/usr/bin/env python3
+    import asyncio
+    import aiohttp
+    import psycopg2
+    import redis
+    import json
+    import logging
+    from datetime import datetime
+    
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+    
+    class HealthChecker:
+        def __init__(self):
+            self.services = {
+                'api': '{{ .Values.api.service.port }}',
+                'frontend': '{{ .Values.frontend.service.port }}',
+                'vllm': '{{ .Values.ai.vllm.service.port }}',
+                'audio_processor': '{{ .Values.ai.audioProcessor.service.port }}'
+            }
+            
+        async def check_api_health(self):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f'http://api:8000{{ .Values.api.healthCheck.path }}') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            return {'status': 'healthy', 'details': data}
+                        return {'status': 'unhealthy', 'error': f'HTTP {resp.status}'}
+            except Exception as e:
+                return {'status': 'unhealthy', 'error': str(e)}
+        
+        async def check_database_health(self):
+            try:
+                conn = psycopg2.connect(
+                    host="postgresql",
+                    database="{{ .Values.postgresql.auth.database }}",
+                    user="{{ .Values.postgresql.auth.username }}",
+                    password="{{ .Values.postgresql.auth.postgresPassword }}"
+                )
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1")
+                result = cursor.fetchone()
+                conn.close()
+                return {'status': 'healthy', 'connection': 'active'}
+            except Exception as e:
+                return {'status': 'unhealthy', 'error': str(e)}
+        
+        async def check_redis_health(self):
+            try:
+                r = redis.Redis(host='redis', port=6379, db=0)
+                r.ping()
+                info = r.info()
+                return {
+                    'status': 'healthy',
+                    'connected_clients': info['connected_clients'],
+                    'used_memory_human': info['used_memory_human']
+                }
+            except Exception as e:
+                return {'status': 'unhealthy', 'error': str(e)}
+        
+        async def check_elasticsearch_health(self):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get('http://elasticsearch:9200/_cluster/health') as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            return {
+                                'status': data['status'],
+                                'cluster_name': data['cluster_name'],
+                                'number_of_nodes': data['number_of_nodes']
+                            }
+                        return {'status': 'unhealthy', 'error': f'HTTP {resp.status}'}
+            except Exception as e:
+                return {'status': 'unhealthy', 'error': str(e)}
+        
+        async def check_vllm_health(self):
+            try:
+                async with aiohttp.ClientSession() as session:
+                    async with session.get('http://vllm-service:8000/health') as resp:
+                        if resp.status == 200:
+                            return {'status': 'healthy', 'model_loaded': True}
+                        return {'status': 'unhealthy', 'error': f'HTTP {resp.status}'}
+            except Exception as e:
+                return {'status': 'unhealthy', 'error': str(e)}
+        
+        async def run_all_checks(self):
+            checks = {
+                'api': await self.check_api_health(),
+                'database': await self.check_database_health(),
+                'redis': await self.check_redis_health(),
+                'elasticsearch': await self.check_elasticsearch_health(),
+                'vllm': await self.check_vllm_health()
+            }
+            
+            overall_status = 'healthy' if all(
+                check['status'] == 'healthy' for check in checks.values()
+            ) else 'unhealthy'
+            
+            return {
+                'timestamp': datetime.utcnow().isoformat(),
+                'overall_status': overall_status,
+                'services': checks
+            }
+    
+    if __name__ == '__main__':
+        checker = HealthChecker()
+        result = asyncio.run(checker.run_all_checks())
+        print(json.dumps(result, indent=2))
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-health-checker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: health-checker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "gamemaster-companion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: health-checker
+  template:
+    metadata:
+      labels:
+        {{- include "gamemaster-companion.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: health-checker
+    spec:
+      containers:
+      - name: health-checker
+        image: python:3.11-slim
+        ports:
+        - containerPort: 8080
+          name: http
+        command:
+        - /bin/bash
+        - -c
+        - |
+          pip install aiohttp psycopg2-binary redis
+          python3 /scripts/health-check.py
+          # Start simple HTTP server for health endpoint
+          python3 -m http.server 8080
+        volumeMounts:
+        - name: health-scripts
+          mountPath: /scripts
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "10m"
+          limits:
+            memory: "128Mi"
+            cpu: "50m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: health-scripts
+        configMap:
+          name: {{ include "gamemaster-companion.fullname" . }}-health-config
+          defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-health-checker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+    app.kubernetes.io/component: health-checker
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "gamemaster-companion.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: health-checker
+{{- end }}
+---
+# Service Monitor for Prometheus to scrape health metrics
+{{- if and .Values.monitoring.enabled .Values.api.healthCheck.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-health
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "gamemaster-companion.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: health-checker
+  endpoints:
+  - port: http
+    interval: 30s
+    path: /metrics
+{{- end }}

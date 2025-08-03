@@ -1,0 +1,290 @@
+# Production-specific values for GameMaster's Companion
+# Overrides values.yaml for production deployment
+
+global:
+  domain: "gamemaster-companion.com"
+  debug: false
+  logLevel: "INFO"
+  environment: "production"
+  storageClass: "fast-ssd"
+
+# Production-ready API service
+api:
+  replicaCount: 3
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    fsGroup: 1001
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+
+# Production frontend
+frontend:
+  replicaCount: 2
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "200m"
+
+# Production-grade database
+postgresql:
+  enabled: true
+  auth:
+    # These should be overridden with secure values in production
+    postgresPassword: "CHANGE_ME_IN_PRODUCTION"
+    username: "postgres"
+    password: "CHANGE_ME_IN_PRODUCTION"
+    database: "gamemaster_companion"
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1000m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 999
+      fsGroup: 999
+  # High availability setup
+  readReplicas:
+    replicaCount: 1
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+
+# Production Redis with authentication
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "CHANGE_ME_IN_PRODUCTION"
+  master:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+
+# Production AI services with GPU support
+ai:
+  vllm:
+    enabled: true
+    model: "microsoft/DialoGPT-large"  # Larger model for production
+    maxModelLen: 4096
+    gpuMemoryUtilization: 0.9
+    resources:
+      requests:
+        memory: "8Gi"
+        cpu: "4000m"
+        nvidia.com/gpu: 1
+      limits:
+        memory: "16Gi"
+        cpu: "8000m"
+        nvidia.com/gpu: 1
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "fast-ssd"
+    nodeSelector:
+      accelerator: nvidia-tesla-k80
+  
+  audioProcessor:
+    enabled: true
+    replicaCount: 2
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1000m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+
+# Production search cluster
+search:
+  elasticsearch:
+    enabled: true
+    replicas: 3
+    minimumMasterNodes: 2
+    volumeClaimTemplate:
+      accessModes: ["ReadWriteOnce"]
+      storageClassName: "fast-ssd"
+      resources:
+        requests:
+          storage: 50Gi
+    resources:
+      requests:
+        cpu: "1000m"
+        memory: "4Gi"
+      limits:
+        cpu: "2000m"
+        memory: "8Gi"
+    esConfig:
+      elasticsearch.yml: |
+        cluster.name: "gmc-production"
+        network.host: 0.0.0.0
+        discovery.seed_hosts: ["elasticsearch-master-headless"]
+        cluster.initial_master_nodes: ["elasticsearch-master-0","elasticsearch-master-1","elasticsearch-master-2"]
+        xpack.security.enabled: true
+        xpack.security.transport.ssl.enabled: true
+
+# Production monitoring stack
+monitoring:
+  enabled: true
+  kube-prometheus-stack:
+    grafana:
+      enabled: true
+      persistence:
+        enabled: true
+        size: 10Gi
+        storageClassName: "fast-ssd"
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "256Mi"
+        limits:
+          cpu: "200m"
+          memory: "512Mi"
+      adminPassword: "CHANGE_ME_IN_PRODUCTION"
+    prometheus:
+      prometheusSpec:
+        replicas: 2
+        retention: "30d"
+        storageSpec:
+          volumeClaimTemplate:
+            spec:
+              storageClassName: "fast-ssd"
+              accessModes: ["ReadWriteOnce"]
+              resources:
+                requests:
+                  storage: 50Gi
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "2Gi"
+          limits:
+            cpu: "1000m"
+            memory: "4Gi"
+
+# Production integrations
+integrations:
+  discord:
+    enabled: true
+    botToken: ""  # Set via secret
+    webhookSupport: true
+  
+  dndbeyond:
+    enabled: true
+    apiSupport: true
+    characterImport: true
+
+# Disable development features
+development:
+  seedData:
+    enabled: false
+  
+  debugEndpoints:
+    enabled: false
+
+# Production resource quotas
+resourceQuota:
+  enabled: true
+  hard:
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+    persistentvolumeclaims: "50"
+
+# Enable network policies for security
+networkPolicy:
+  enabled: true
+
+# Enable backup in production
+backup:
+  enabled: true
+  schedule: "0 2 * * *"
+  retention: "30d"
+
+# TLS configuration for production
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  hosts:
+    - host: gamemaster-companion.com
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: frontend
+              port: 3000
+        - path: /api
+          pathType: Prefix
+          backend:
+            service:
+              name: api
+              port: 8000
+  tls:
+    - secretName: gmc-tls
+      hosts:
+        - gamemaster-companion.com
+
+# Service account settings for production
+serviceAccount:
+  create: true
+  automount: false
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT:role/gmc-service-role"
+  name: "gmc-service-account"
+
+# Production autoscaling
+autoscaling:
+  api:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  frontend:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70

@@ -1,0 +1,90 @@
+# Configuration for GameMaster's Companion
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gamemaster-companion.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gamemaster-companion.labels" . | nindent 4 }}
+data:
+  # Database configuration
+  database-host: {{ include "gamemaster-companion.fullname" . }}-postgresql
+  database-port: "{{ if and .Values.postgresql.primary .Values.postgresql.primary.service .Values.postgresql.primary.service.ports }}{{ .Values.postgresql.primary.service.ports.postgresql | default 5432 }}{{ else }}5432{{ end }}"
+  database-name: {{ .Values.postgresql.auth.database | quote }}
+  
+  # Redis configuration
+  redis-host: {{ include "gamemaster-companion.fullname" . }}-redis-master
+  redis-port: "{{ if and .Values.redis.master .Values.redis.master.service .Values.redis.master.service.ports }}{{ .Values.redis.master.service.ports.redis | default 6379 }}{{ else }}6379{{ end }}"
+  
+  # Elasticsearch configuration
+  elasticsearch-host: {{ include "gamemaster-companion.fullname" . }}-elasticsearch
+  elasticsearch-port: "{{ if and .Values.search.elasticsearch.service .Values.search.elasticsearch.service.ports }}{{ .Values.search.elasticsearch.service.ports.http | default 9200 }}{{ else }}9200{{ end }}"
+  
+  # vLLM configuration
+  {{- if .Values.ai.vllm.enabled }}
+  vllm-host: {{ include "gamemaster-companion.fullname" . }}-vllm
+  vllm-port: "{{ .Values.ai.vllm.service.port }}"
+  vllm-model: {{ .Values.ai.vllm.model | quote }}
+  {{- end }}
+  
+  # Audio processor configuration
+  {{- if .Values.ai.audioProcessor.enabled }}
+  audio-processor-host: {{ include "gamemaster-companion.fullname" . }}-audio-processor
+  audio-processor-port: "{{ .Values.ai.audioProcessor.service.port }}"
+  {{- end }}
+  
+  # Application configuration
+  log-level: {{ .Values.global.logLevel | quote }}
+  debug: {{ .Values.global.debug | quote }}
+  domain: {{ .Values.global.domain | quote }}
+  
+  # AI configuration
+  {{- if .Values.ai.vllm.enabled }}
+  ai-enabled: "true"
+  ai-model-max-length: "{{ .Values.ai.vllm.maxModelLen }}"
+  ai-gpu-memory-utilization: "{{ .Values.ai.vllm.gpuMemoryUtilization }}"
+  {{- else }}
+  ai-enabled: "false"
+  {{- end }}
+  
+  # Search configuration
+  {{- if .Values.search.elasticsearch.enabled }}
+  search-enabled: "true"
+  search-cluster-name: {{ .Values.search.elasticsearch.clusterName | quote }}
+  {{- else }}
+  search-enabled: "false"
+  {{- end }}
+  
+  # Integration settings
+  {{- if .Values.integrations.discord.enabled }}
+  discord-enabled: "true"
+  discord-webhook-support: "{{ .Values.integrations.discord.webhookSupport }}"
+  {{- else }}
+  discord-enabled: "false"
+  {{- end }}
+  
+  {{- if .Values.integrations.dndbeyond.enabled }}
+  dndbeyond-enabled: "true"
+  dndbeyond-api-support: "{{ .Values.integrations.dndbeyond.apiSupport }}"
+  dndbeyond-character-import: "{{ .Values.integrations.dndbeyond.characterImport }}"
+  {{- else }}
+  dndbeyond-enabled: "false"
+  {{- end }}
+  
+  # Development settings
+  {{- if .Values.development.seedData.enabled }}
+  seed-data-enabled: "true"
+  test-campaigns: "{{ .Values.development.seedData.testCampaigns }}"
+  test-characters: "{{ .Values.development.seedData.testCharacters }}"
+  test-sessions: "{{ .Values.development.seedData.testSessions }}"
+  {{- else }}
+  seed-data-enabled: "false"
+  {{- end }}
+  
+  {{- if .Values.development.debugEndpoints.enabled }}
+  debug-endpoints-enabled: "true"
+  debug-metrics: "{{ .Values.development.debugEndpoints.metrics }}"
+  debug-profiling: "{{ .Values.development.debugEndpoints.profiling }}"
+  {{- else }}
+  debug-endpoints-enabled: "false"
+  {{- end }}
