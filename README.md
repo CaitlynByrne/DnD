@@ -31,6 +31,41 @@ Eliminate the administrative burden on Game Masters while enhancing player engag
 - **AI/ML:** Local LLM deployment via vllm, diart for speech processing
 - **Infrastructure:** Kubernetes-native deployment with comprehensive monitoring
 
+## Getting Started
+
+### Prerequisites
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (running)
+- [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) v0.20+
+- [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) v1.28+
+- [Helm](https://helm.sh/docs/intro/install/) v3.12+
+
+### Quick Start
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/gamemaster-companion/gmc.git
+   cd gmc
+   ```
+
+2. **Set up the development environment:**
+   ```bash
+   # Make scripts executable (Linux/Mac)
+   chmod +x infrastructure/scripts/*.sh
+   
+   # Create and configure Kind cluster with all services
+   ./infrastructure/scripts/setup-kind-cluster.sh
+   ```
+
+3. **Access your development environment:**
+   - **Frontend**: http://localhost:3000
+   - **API**: http://localhost:8000
+   - **API Documentation**: http://localhost:8000/docs
+   - **Database**: localhost:5432
+   - **Cache**: localhost:6379
+
+For detailed setup instructions, troubleshooting, and advanced configuration, see the [Infrastructure README](infrastructure/README.md).
+
 ## Target Users
 
 - **Primary:** Game Masters running D&D 5e and similar tabletop RPGs
@@ -39,19 +74,22 @@ Eliminate the administrative burden on Game Masters while enhancing player engag
 
 ## Project Status
 
-**Current Phase:** Definition and Planning
+**Current Phase:** Foundation Development
 
-This project is currently in the early definition phase. We are:
-- Finalizing requirements and user stories
-- Designing system architecture
-- Planning development phases
-- Building the technical foundation
+This project is in active development. We have:
+- ✅ Complete Kubernetes infrastructure with Kind development environment
+- ✅ Helm charts for all services with comprehensive configuration
+- ✅ Development workflow automation scripts
+- 🚧 Core API implementation
+- 🚧 Frontend development
+- 📋 AI integration planning
 
 ## Documentation
 
 - [**Product Requirements Document**](PRD.md) - Comprehensive feature specifications and technical requirements
 - [**Development Roadmap**](ROADMAP.md) - Implementation strategy and project timeline
 - [**User Stories**](USERSTORIES.md) - Detailed user requirements organized by persona and feature
+- [**Infrastructure Setup**](infrastructure/README.md) - Complete development environment setup and operations guide
 
 ## Development Phases
 
@@ -59,3 +97,4 @@ This project is currently in the early definition phase. We are:
 2. **Live Session Features** (Months 4-6) - Real-time collaboration and audio processing
 3. **AI Enhancement** (Months 7-9) - Advanced AI features and content generation
 4. **Advanced Features** (Months 10-12) - Polish and community features
+EOF < /dev/null
