@@ -49,12 +49,20 @@ Eliminate the administrative burden on Game Masters while enhancing player engag
    ```
 
 2. **Set up the development environment:**
+
+   **Linux/Mac:**
    ```bash
-   # Make scripts executable (Linux/Mac)
+   # Make scripts executable
    chmod +x infrastructure/scripts/*.sh
    
    # Create and configure Kind cluster with all services
    ./infrastructure/scripts/setup-kind-cluster.sh
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   # Create and configure Kind cluster with all services
+   .\infrastructure\scripts\setup-kind-cluster.ps1
    ```
 
 3. **Access your development environment:**
@@ -97,4 +105,32 @@ This project is in active development. We have:
 2. **Live Session Features** (Months 4-6) - Real-time collaboration and audio processing
 3. **AI Enhancement** (Months 7-9) - Advanced AI features and content generation
 4. **Advanced Features** (Months 10-12) - Polish and community features
-EOF < /dev/null
+## Additional Commands
+
+### Development Workflow
+
+**Linux/Mac:**
+```bash
+# Check status of all services
+./infrastructure/scripts/dev-workflow.sh status
+
+# View service logs
+./infrastructure/scripts/dev-workflow.sh logs <service>
+
+# Access services locally
+./infrastructure/scripts/dev-workflow.sh port-forward all
+```
+
+**Windows (PowerShell):**
+```powershell
+# Check status of all services
+.\infrastructure\scripts\dev-workflow.ps1 status
+
+# View service logs
+.\infrastructure\scripts\dev-workflow.ps1 logs <service>
+
+# Access services locally
+.\infrastructure\scripts\dev-workflow.ps1 port-forward all
+```
+
+For more development commands and troubleshooting, see the [Infrastructure README](infrastructure/README.md).

@@ -9,6 +9,8 @@ GMC uses Kubernetes-native deployment with a complete local development environm
 ## Development Environment
 
 ### Setup Commands
+
+#### Linux/Mac
 ```bash
 # Initial cluster setup
 ./infrastructure/scripts/setup-kind-cluster.sh
@@ -17,9 +19,20 @@ GMC uses Kubernetes-native deployment with a complete local development environm
 ./infrastructure/scripts/dev-workflow.sh <command>
 ```
 
+#### Windows (PowerShell)
+```powershell
+# Initial cluster setup
+.\infrastructure\scripts\setup-kind-cluster.ps1
+
+# Development workflow management
+.\infrastructure\scripts\dev-workflow.ps1 <command>
+```
+
 ### Core Development Workflow
 
 **Service Management:**
+
+Linux/Mac:
 ```bash
 # Check status of all services
 ./infrastructure/scripts/dev-workflow.sh status
@@ -35,7 +48,25 @@ GMC uses Kubernetes-native deployment with a complete local development environm
 ./infrastructure/scripts/dev-workflow.sh update
 ```
 
+Windows (PowerShell):
+```powershell
+# Check status of all services
+.\infrastructure\scripts\dev-workflow.ps1 status
+
+# View logs (use -Follow to tail logs)
+.\infrastructure\scripts\dev-workflow.ps1 logs api
+.\infrastructure\scripts\dev-workflow.ps1 logs api -Follow
+
+# Restart a service
+.\infrastructure\scripts\dev-workflow.ps1 restart api
+
+# Update deployment after configuration changes
+.\infrastructure\scripts\dev-workflow.ps1 update
+```
+
 **Database Operations:**
+
+Linux/Mac:
 ```bash
 # Run database migrations
 ./infrastructure/scripts/dev-workflow.sh migrate
@@ -44,7 +75,18 @@ GMC uses Kubernetes-native deployment with a complete local development environm
 ./infrastructure/scripts/dev-workflow.sh seed
 ```
 
+Windows (PowerShell):
+```powershell
+# Run database migrations
+.\infrastructure\scripts\dev-workflow.ps1 migrate
+
+# Seed test data
+.\infrastructure\scripts\dev-workflow.ps1 seed
+```
+
 **Local Access:**
+
+Linux/Mac:
 ```bash
 # Forward all services for local access
 ./infrastructure/scripts/dev-workflow.sh port-forward all
@@ -53,10 +95,28 @@ GMC uses Kubernetes-native deployment with a complete local development environm
 ./infrastructure/scripts/dev-workflow.sh port-forward api
 ```
 
+Windows (PowerShell):
+```powershell
+# Forward all services for local access
+.\infrastructure\scripts\dev-workflow.ps1 port-forward all
+
+# Forward specific service
+.\infrastructure\scripts\dev-workflow.ps1 port-forward api
+```
+
 **Environment Cleanup:**
+
+Linux/Mac:
 ```bash
 # Clean up everything (requires confirmation)
 ./infrastructure/scripts/dev-workflow.sh clean
+```
+
+Windows (PowerShell):
+```powershell
+# Clean up everything (use -Confirm to skip prompt)
+.\infrastructure\scripts\dev-workflow.ps1 clean
+.\infrastructure\scripts\dev-workflow.ps1 clean -Confirm
 ```
 
 ## Configuration Management
@@ -227,6 +287,8 @@ ai:
 ## Configuration Validation
 
 ### Validation Commands
+
+Linux/Mac:
 ```bash
 # Validate configuration before deployment
 python3 infrastructure/scripts/validate-config.py --environment development
@@ -234,6 +296,17 @@ python3 infrastructure/scripts/validate-config.py --environment development
 # Test Helm chart rendering
 helm template gmc-dev infrastructure/helm/gmc-dev \
   --values infrastructure/helm/gmc-dev/values.yaml \
+  --values infrastructure/helm/gmc-dev/values-development.yaml
+```
+
+Windows (PowerShell):
+```powershell
+# Validate configuration before deployment
+python infrastructure/scripts/validate-config.py --environment development
+
+# Test Helm chart rendering
+helm template gmc-dev infrastructure/helm/gmc-dev `
+  --values infrastructure/helm/gmc-dev/values.yaml `
   --values infrastructure/helm/gmc-dev/values-development.yaml
 ```
 

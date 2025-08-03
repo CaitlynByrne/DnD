@@ -164,6 +164,10 @@ install_gmc() {
     # Create namespace
     kubectl create namespace gmc-dev --dry-run=client -o yaml | kubectl apply -f -
     
+    # Build Helm chart dependencies
+    log_info "Building Helm chart dependencies..."
+    (cd "$INFRASTRUCTURE_DIR/helm/gmc-dev" && helm dependency build)
+    
     # Install Helm chart
     helm upgrade --install gmc-dev \
         "$INFRASTRUCTURE_DIR/helm/gmc-dev" \

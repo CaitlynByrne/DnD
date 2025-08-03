@@ -13,12 +13,19 @@ This directory contains the complete Kubernetes infrastructure for GameMaster's 
 
 ### 1. Setup Local Development Environment
 
+#### Linux/Mac
 ```bash
-# Make scripts executable (Linux/Mac)
+# Make scripts executable
 chmod +x infrastructure/scripts/*.sh
 
 # Create and configure Kind cluster
 ./infrastructure/scripts/setup-kind-cluster.sh
+```
+
+#### Windows (PowerShell)
+```powershell
+# Create and configure Kind cluster
+.\infrastructure\scripts\setup-kind-cluster.ps1
 ```
 
 This will:
@@ -43,6 +50,7 @@ After setup completes, services are available at:
 
 ### 3. Development Workflow
 
+#### Linux/Mac
 ```bash
 # Check status of all services
 ./infrastructure/scripts/dev-workflow.sh status
@@ -65,6 +73,31 @@ After setup completes, services are available at:
 
 # Clean up everything
 ./infrastructure/scripts/dev-workflow.sh clean
+```
+
+#### Windows (PowerShell)
+```powershell
+# Check status of all services
+.\infrastructure\scripts\dev-workflow.ps1 status
+
+# View logs
+.\infrastructure\scripts\dev-workflow.ps1 logs api
+.\infrastructure\scripts\dev-workflow.ps1 logs api -Follow
+
+# Restart a service
+.\infrastructure\scripts\dev-workflow.ps1 restart api
+
+# Update deployment after configuration changes
+.\infrastructure\scripts\dev-workflow.ps1 update
+
+# Run database migrations
+.\infrastructure\scripts\dev-workflow.ps1 migrate
+
+# Seed test data
+.\infrastructure\scripts\dev-workflow.ps1 seed
+
+# Clean up everything
+.\infrastructure\scripts\dev-workflow.ps1 clean -Confirm
 ```
 
 ## Architecture Overview
@@ -145,11 +178,19 @@ ai:
 1. **Modify values files** in `helm/gmc-dev/`
 2. **Validate configuration**:
    ```bash
+   # Linux/Mac
    python3 infrastructure/scripts/validate-config.py --environment development
+   
+   # Windows
+   python infrastructure/scripts/validate-config.py --environment development
    ```
 3. **Update deployment**:
    ```bash
+   # Linux/Mac
    ./infrastructure/scripts/dev-workflow.sh update values-development.yaml
+   
+   # Windows (PowerShell)
+   .\infrastructure\scripts\dev-workflow.ps1 update values-development.yaml
    ```
 
 ### Adding New Services
@@ -220,15 +261,22 @@ ai:
 # Check Docker is running
 docker info
 
-# Recreate cluster
+# Recreate cluster - Linux/Mac
 kind delete cluster --name gmc-dev
 ./infrastructure/scripts/setup-kind-cluster.sh
+
+# Recreate cluster - Windows (PowerShell)
+kind delete cluster --name gmc-dev
+.\infrastructure\scripts\setup-kind-cluster.ps1
 ```
 
 #### 2. Services Not Accessible
 ```bash
-# Check port forwarding
+# Check port forwarding - Linux/Mac
 ./infrastructure/scripts/dev-workflow.sh port-forward all
+
+# Check port forwarding - Windows (PowerShell)
+.\infrastructure\scripts\dev-workflow.ps1 port-forward all
 
 # Check ingress
 kubectl get ingress -n gmc-dev
@@ -251,8 +299,11 @@ ai:
     model: "microsoft/DialoGPT-small"
     maxModelLen: 512
 
-# Update deployment
+# Update deployment - Linux/Mac
 ./infrastructure/scripts/dev-workflow.sh update
+
+# Update deployment - Windows (PowerShell)
+.\infrastructure\scripts\dev-workflow.ps1 update
 ```
 
 ### Resource Requirements
@@ -337,7 +388,9 @@ infrastructure/
 │       ├── health-checks.yaml         # Health monitoring
 │       └── persistentvolumeclaim.yaml # Storage claims
 └── scripts/                           # Automation scripts
-    ├── setup-kind-cluster.sh          # Initial setup
-    ├── dev-workflow.sh                # Development commands
+    ├── setup-kind-cluster.sh          # Initial setup (Linux/Mac)
+    ├── setup-kind-cluster.ps1         # Initial setup (Windows)
+    ├── dev-workflow.sh                # Development commands (Linux/Mac)
+    ├── dev-workflow.ps1               # Development commands (Windows)
     └── validate-config.py             # Configuration validation
 ```

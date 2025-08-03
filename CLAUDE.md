@@ -29,15 +29,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Helm v3.12+
 
 ### Development Environment Setup
+
+#### Linux/Mac
 ```bash
-# Make scripts executable (Linux/Mac)
+# Make scripts executable
 chmod +x infrastructure/scripts/*.sh
 
 # Create and configure Kind cluster with all services
 ./infrastructure/scripts/setup-kind-cluster.sh
 ```
 
+#### Windows (PowerShell)
+```powershell
+# Create and configure Kind cluster with all services
+.\infrastructure\scripts\setup-kind-cluster.ps1
+```
+
 ### Essential Commands
+
+#### Linux/Mac
 ```bash
 # Check status of all services
 ./infrastructure/scripts/dev-workflow.sh status
@@ -47,6 +57,18 @@ chmod +x infrastructure/scripts/*.sh
 
 # Access services locally
 ./infrastructure/scripts/dev-workflow.sh port-forward all
+```
+
+#### Windows (PowerShell)
+```powershell
+# Check status of all services
+.\infrastructure\scripts\dev-workflow.ps1 status
+
+# View service logs
+.\infrastructure\scripts\dev-workflow.ps1 logs <service>
+
+# Access services locally
+.\infrastructure\scripts\dev-workflow.ps1 port-forward all
 ```
 
 ### Service Endpoints
